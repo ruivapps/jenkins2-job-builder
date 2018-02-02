@@ -8,8 +8,8 @@ import requests
 import jenkins2_jobs
 from jenkins_jobs.errors import JenkinsJobsException
 
-JOB_YAML = 'test/JenkinsJob.yaml'
-JOB_ERROR_YAML = 'test/JenkinsJobError.yaml'
+JOB_YAML = 'JenkinsJob.yaml'
+JOB_ERROR_YAML = 'JenkinsJobError.yaml'
 JOB_PATH = 'test/folder/test1/myjob'
 USER = 'user1'
 PASSWORD = 'password1'
@@ -57,8 +57,8 @@ class TestURL:
         assert jenkins2_jobs.update_url_2_create_url(update_url) == create_url
 
 def test_find_jenkins_job_path():
-    path = jenkins2_jobs.find_jenkins_job_path(JOB_YAML)
-    assert path == JOB_PATH
+    path = list(jenkins2_jobs.find_jenkins_job_path(JOB_YAML))
+    assert path[0] == JOB_PATH
 
 class TestJenkins2Job:
     def test_init(self):

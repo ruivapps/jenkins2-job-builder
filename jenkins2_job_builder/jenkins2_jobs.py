@@ -17,6 +17,8 @@ except ImportError:
 import requests
 import yaml
 
+# pylint: disable=C0301,R0912
+
 @contextlib.contextmanager
 def stdout_redirect():
     """this is hacking, but it's the most easiest way to
@@ -96,14 +98,15 @@ def build_jenkins_url(url, path):
     """
 
     def split(path):
-        parent, base = os.path.split(path)
+        """split all path"""
+        parent, _ = os.path.split(path)
         if parent:
             yield parent
-            for p in split(parent):
-                yield p
-    yield os.path.join(url, 'job', '/job/'.join(path.split('/')),'config.xml')
-    for p in split(path):
-        yield os.path.join(url, 'job', '/job/'.join(p.split('/')), 'config.xml')
+            for _path_ in split(parent):
+                yield _path_
+    yield os.path.join(url, 'job', '/job/'.join(path.split('/')), 'config.xml')
+    for _path_ in split(path):
+        yield os.path.join(url, 'job', '/job/'.join(_path_.split('/')), 'config.xml')
     yield os.path.join(url, 'config.xml')
 
 
@@ -114,16 +117,16 @@ def find_jenkins_job_path(yaml_file):
     :param yaml_file: the content of yaml file
     :type yaml_file: str
 
-    :return str
+    :return generator
     """
 
     data = yaml.load(open(yaml_file))
     for line in data:
-        if not 'job' in line:
+        if 'job' not in line:
             continue
-        if not 'name' in line['job']:
+        if 'name' not in line['job']:
             continue
-        return line['job']['name']
+        yield line['job']['name']
 
 def update_url_2_create_url(url):
     """convert url used for update to
@@ -142,6 +145,24 @@ def update_url_2_create_url(url):
     for _ in range(2):
         url, name = os.path.split(url)
     return os.path.join(os.path.split(url)[0], 'createItem?name={}'.format(name))
+
+def split_xml(xml_data):
+    """if YAML has more than one job defined.
+    the stdout redirect hack will get all html together
+    need to split it apart
+
+    :param xml_data: xml content
+    :type xml_data: str
+
+    :return generator
+    """
+    xml_header = '<?xml version="1.0" encoding="utf-8"?>\n'
+    if sys.version_info.major == 3:
+        xml_data = xml_data.decode()
+    for xml in xml_data.split(xml_header):
+        if xml:
+            yield xml_header+xml
+
 
 class Jenkins2Jobs(object):
     """Help(hack) to get jobs to Jenkins
@@ -209,6 +230,7 @@ class Jenkins2Jobs(object):
         response.raise_for_status()
         return response.status_code, response.text
 
+
 def parse():
     """command line arguments parse
     """
@@ -233,31 +255,22 @@ def parse():
 
 
 def main():
+    """cli entry point
+    """
     args = parse()
     job_xml, configuration = from_jenkins_job(args.filename, args.conf)
-    job_path = find_jenkins_job_path(args.filename)
-    urls = list(build_jenkins_url(configuration['url'], job_path))
+    job_xml = list(split_xml(job_xml))
+    job_urls = {}
+    for job_path in find_jenkins_job_path(args.filename):
+        job_urls[job_path] = list(build_jenkins_url(configuration['url'], job_path))
     jenkins = Jenkins2Jobs(configuration['user'], configuration['password'])
     print("\n")
-    if args.update:
-        url = urls[0]
-        try:
-            jenkins.query_job(url)
-        except requests.exceptions.HTTPError as error:
-            raise SystemExit("can not update job.\nErrors:\n\t{}".format(error))
-        try:
-            jenkins.create_job(url, job_xml)
-        except requests.exceptions.HTTPError as error:
-            raise SystemExit("error create job.\nErrors:\n\t{}".format(error))
-        print("successful updated the job")
-    elif args.create:
+
+
+    xml_counter = 0
+    for urls in job_urls.values():
         job_url = urls.pop(0)
-        try:
-            jenkins.query_job(job_url)
-            raise SystemExit("job already exist on server. exit.\n\t{}".format(job_url))
-        except requests.exceptions.HTTPError:
-            pass
-        # need to figure out if path (folder) exist or not. root->leaf is easy.
+        # need to figure out if path (folder) exist or not. root->leaf is the most easiest way.
         folder_xml = jenkins_folder_xml()
         while urls:
             url = urls.pop()
@@ -271,16 +284,44 @@ def main():
                     print("successful created the folder")
                 except requests.exceptions.HTTPError as error:
                     # error create folder
-                    raise SystemExit("error create folder.\nErrors:\n\t{}".format(error))
-        # with path exist, create job
+                    print("error create folder.\nErrors:\n\t{}".format(error))
         try:
-            print("try to create job:\n\t{}".format(os.path.split(url)[0]))
-            jenkins.create_job(update_url_2_create_url(job_url), job_xml)
-            print("successful created the job")
-        except requests.exceptions.HTTPError as error:
-            raise SystemExit("error create job.\nErrors:\n\t{}".format(error))
-    else:
-        raise NotImplementedError
+            jenkins.query_job(job_url)
+            # job already exist. update if arg.update is True
+            if args.update:
+                # update (overwrite) the job
+                """
+                if args.update:
+                    for urls in job_urls.values():
+                        url = urls[0]
+                        try:
+                            jenkins.query_job(url)
+                        except requests.exceptions.HTTPError as error:
+                            raise SystemExit("can not update job.\nErrors:\n\t{}".format(error))
+                    try:
+                        jenkins.create_job(url, job_xml)
+                    except requests.exceptions.HTTPError as error:
+                        raise SystemExit("error create job.\nErrors:\n\t{}".format(error))
+                    print("successful updated the job")
+                """
+                try:
+                    print("try to update job:\n\t{}".format(os.path.split(url)[0]))
+                    jenkins.create_job(job_url, job_xml[xml_counter])
+                    print("successful updated the job")
+                except requests.exceptions.HTTPError as error:
+                    print("error update the job.\nErrors:\n\t{}".format(error))
+            else:
+                print("job already exit, update is set to {}. Skip this job.\n\t{}".format(args.update, job_url))
+        except requests.exceptions.HTTPError:
+            # job do not exit, create new job
+            try:
+                print("try to create job:\n\t{}".format(os.path.split(url)[0]))
+                jenkins.create_job(update_url_2_create_url(job_url), job_xml[xml_counter])
+                print("successful created the job")
+            except requests.exceptions.HTTPError as error:
+                print("error create job.\nErrors:\n\t{}".format(error))
+                print(job_xml[xml_counter])
+        xml_counter += 1
 
 
 if __name__ == '__main__':
