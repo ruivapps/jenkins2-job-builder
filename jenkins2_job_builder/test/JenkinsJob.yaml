@@ -1,0 +1,15 @@
+---
+- job:
+    name: test/folder/test1/myjob 
+    project-type: pipeline
+    description: "test description"
+    pipeline-scm: 
+        scm: 
+            - git:
+                url: ssh://user@some.git.repo.com/test/test.git
+                submodule:
+                    recursive: true
+        script-path: Jenkinsfile
+    triggers:
+        - pollscm: 
+            cron: "H 1 1 1 1"

@@ -1,0 +1,5 @@
+requests
+jenkins-job-builder
+PyYAML
+responses
+pytest
