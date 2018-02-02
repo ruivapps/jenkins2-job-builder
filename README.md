@@ -24,4 +24,4 @@ optional arguments:
   --conf CONF   use this configuration file instead of default
   ~~~
   
-  Tested on python 2.7.14 and 3.6.4 on OSX only.
+  Tested with python 2.7.14 and 3.6.4 on OSX only.

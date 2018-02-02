@@ -28,6 +28,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
     ],
     entry_points={
-        'console_scripts': [ 'jenkins2-jobs=jenkins2_job_builder.cli:main' ] },
+        'console_scripts':['jenkins2-jobs=jenkins2_job_builder.jenkins2_jobs:main']},
     long_description=open('README.md').read()
 )
