@@ -1,6 +1,6 @@
 import setuptools
 
-_version_ = '1.0'
+_version_ = '1.1'
 
 setuptools.setup(
     name = "jenkins2-job-builder",
