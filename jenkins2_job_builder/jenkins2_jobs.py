@@ -159,7 +159,9 @@ def split_xml(xml_data):
     xml_header = '<?xml version="1.0" encoding="utf-8"?>\n'
     if sys.version_info.major == 3:
         xml_data = xml_data.decode()
-    for xml in xml_data.split(xml_header):
+    xmls = xml_data.split(xml_header)
+    xmls.reverse()
+    for xml in xmls:
         if xml:
             yield xml_header+xml
 
