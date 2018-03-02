@@ -237,7 +237,6 @@ def main():
     """
 
     args = parse()
-    print(args)
 
     jobs_xml, configuration = from_jenkins_job(args.filename, args.conf)
     if args.test:
