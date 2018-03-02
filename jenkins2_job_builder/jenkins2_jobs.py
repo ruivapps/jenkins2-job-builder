@@ -7,6 +7,7 @@ This is just a temp fix script that would work with Jenkins2 Enterprise 2.
 from __future__ import print_function
 import argparse
 import os
+import sys
 import logging
 import requests
 import yaml
@@ -21,7 +22,13 @@ def from_jenkins_job(yaml_file, config=None):
     :type yaml_file: str
     :returns str, str
     """
-    logging.basicConfig(filename='xxxx.log')
+
+    null = None
+    if os.path.exists('/dev/null'):
+        null = '/dev/null'
+    elif os.path.exists('nul'):
+        null = 'nul'
+    logging.basicConfig(filename=null)
     from jenkins_jobs.cli import entry
     import jenkins_jobs.cli.subcommand.update
     if config:
@@ -34,9 +41,9 @@ def from_jenkins_job(yaml_file, config=None):
     all_jobs = jenkins_jobs.cli.subcommand.update.UpdateSubCommand()
     # pylint: disable=W0212,W0612
     builder, xml_jobs, xml_views = all_jobs._generate_xmljobs(options, jjb_config)
-    print("there are {} job(s)".format(len(xml_jobs)))
+    print("\nthere are {} job(s)".format(len(xml_jobs)), file=sys.stderr)
     for job in xml_jobs:
-        print('\t', job.name)
+        print('\t', job.name, file=sys.stderr)
     return xml_jobs, jjb_config.jenkins.copy()
 
 
@@ -208,10 +215,12 @@ def parse():
                         action='store_true', default=False)
     parser.add_argument('-c', '--create', help='create job if not exist. exit if already exist',
                         action='store_true', default=False)
+    parser.add_argument('-t', '--test', help='test YAML file and print out XML',
+                        action='store_true', default=False)
     parser.add_argument('--conf', help='use this configuration file instead of default')
     parser.add_argument('filename', help='filename of the YAML file', type=str)
     args = parser.parse_args()
-    if not args.update and not args.create:
+    if not args.update and not args.create and not args.test:
         raise SystemExit(parser.print_help())
     if args.update and args.create:
         raise SystemExit("update or create, not both")
@@ -228,7 +237,13 @@ def main():
     """
 
     args = parse()
+    print(args)
+
     jobs_xml, configuration = from_jenkins_job(args.filename, args.conf)
+    if args.test:
+        for job in jobs_xml:
+            print('\n', job.output().decode(), '\n')
+        return
 
     jenkins = Jenkins2Jobs(configuration['user'], configuration['password'])
     print("\n")
