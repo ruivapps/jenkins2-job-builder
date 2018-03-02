@@ -15,18 +15,11 @@ USER = 'user1'
 PASSWORD = 'password1'
 JENKINS = 'http://jenkins.com'
 
-def test_stdout_redirect():
-    with jenkins2_jobs.stdout_redirect() as my_stdout:
-        writer = getattr(sys.stdout, 'buffer', sys.stdout)
-        writer.write(b"test")
-        sys.stdout.flush()
-        assert my_stdout.getvalue() == b"test"
-
 class Test_Ask_Help_From_Jenkins_Job:
     def test_ask_jenkins_job(self):
         #FIXME: didn't mock configuration file
         job_xml, _ = jenkins2_jobs.from_jenkins_job(JOB_YAML)
-        root = ET.fromstring(job_xml)
+        root = ET.fromstring(job_xml[0].output())
         assert root.tag == 'flow-definition'
         assert root.attrib == {'plugin': 'workflow-job'}
 
