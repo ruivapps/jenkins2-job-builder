@@ -15,9 +15,10 @@ USER = 'user1'
 PASSWORD = 'password1'
 JENKINS = 'http://jenkins.com'
 
+
 class Test_Ask_Help_From_Jenkins_Job:
     def test_ask_jenkins_job(self):
-        #FIXME: didn't mock configuration file
+        # FIXME: didn't mock configuration file
         job_xml, _ = jenkins2_jobs.from_jenkins_job(JOB_YAML)
         root = ET.fromstring(job_xml[0].output())
         assert root.tag == 'flow-definition'
@@ -34,6 +35,7 @@ def test_jenkins_folder_xml():
     assert root.tag == 'com.cloudbees.hudson.plugins.folder.Folder'
     assert root.attrib == {'plugin': 'cloudbees-folder'}
 
+
 class TestURL:
     def test_build_jenkins_url(self):
         urls = ['http://jenkins.com/job/test/job/folder/job/test1/job/myjob/config.xml',
@@ -49,9 +51,11 @@ class TestURL:
         create_url = 'http://jenkins.com/Python/job/test/createItem?name=jenkins2_jobs'
         assert jenkins2_jobs.update_url_2_create_url(update_url) == create_url
 
+
 def test_find_jenkins_job_path():
     path = list(jenkins2_jobs.find_jenkins_job_path(JOB_YAML))
     assert path[0] == JOB_PATH
+
 
 class TestJenkins2Job:
     def test_init(self):
@@ -96,4 +100,3 @@ class TestJenkins2Job:
             jenkins2jobs.create_job('{}/job.xml'.format(JENKINS), "<XML>")
         assert jenkins2jobs._response_.status_code == 404
         assert jenkins2jobs._response_.text == message
-

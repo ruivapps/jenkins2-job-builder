@@ -76,6 +76,7 @@ def jenkins_folder_xml():
         </com.cloudbees.hudson.plugins.folder.Folder>
         """
 
+
 def build_jenkins_url(url, path):
     """Jenkins path are named: {name}/job/config.xml or {name}/job/{name}/config.xml
     Need it to figure out if project folder already exist
@@ -96,6 +97,7 @@ def build_jenkins_url(url, path):
             yield parent
             for _path_ in split(parent):
                 yield _path_
+
     yield os.path.join(url, 'job', '/job/'.join(path.split('/')), 'config.xml')
     for _path_ in split(path):
         yield os.path.join(url, 'job', '/job/'.join(_path_.split('/')), 'config.xml')
@@ -120,6 +122,7 @@ def find_jenkins_job_path(yaml_file):
             continue
         yield line['job']['name']
 
+
 def update_url_2_create_url(url):
     """convert url used for update to
     url used for create
@@ -142,6 +145,7 @@ def update_url_2_create_url(url):
 class Jenkins2Jobs(object):
     """Help(hack) to get jobs to Jenkins
     """
+
     def __init__(self, username, password):
         """prepare the HTTP(s) connection by create requests.Session()
         suggest to use API key for password.

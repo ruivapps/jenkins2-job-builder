@@ -1,0 +1,14 @@
+*~
+.DS_Store
+*.pyc
+*.log
+.idea
+*.wpr
+*.wpu
+.coverage
+.html_report
+.cache
+.pytest_cache
+dist
+jenkins2_job_builder.egg-info
+jenkins2_job_builder/test*.yaml
