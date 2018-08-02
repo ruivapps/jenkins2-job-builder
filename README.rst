@@ -1,6 +1,10 @@
 Jinkins2-job-builder
 ====================
 
+Please use official jenkins-job-builder. The latested jenkins-job-builder 
+already fixed the issue. (tested on 2.1.0), this hack is no longer required.
+
+
 Due to current jenkins-job-builder is broken under Jenkins2.
 
 This is temporary solution allows people to push job to Jenkins from
